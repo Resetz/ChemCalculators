@@ -45,9 +45,9 @@ if __name__ == "__main__":
         mult = ""
         while (pos < len(formula) and formula[pos].isalnum()):
             if (len(elem) > 0 and formula[pos].isupper()):
-                    cur.append(toelem(elem, mult))
-                    elem = ""
-                    mult = ""
+                cur.append(toelem(elem, mult))
+                elem = ""
+                mult = ""
             if (formula[pos].isalpha()):
                 elem = elem + formula[pos]
             if (formula[pos].isdigit()):
