@@ -1,30 +1,47 @@
-from importptable import ptable_asymtomass
+from importptable import ptable_asymtomass, ptable_asymtoanum, NUM_ELEMS
+import re
+import numpy as np
 mass = ptable_asymtomass()
+ANUMTOMASS = np.array(mass)
+ASYMTONUM = ptable_asymtoanum()
 
 def toelem(elem, mult):
     return (elem, int(mult) if len(mult) > 0 else 1)
 
-def parsemolformula(formula):
-    cur = []
-    m = 0
-    elem = ""
-    mult = ""
-    while (pos < len(formula) and formula[pos].isalnum()):
-        if (formula[pos].isupper()):
-            if (len(elem) != 0):
-                cur.append(toelem(elem, mult))
-            else:
-                m = int(mult)
-
+def parsemolformula(chemicalformula):
+    y = [z[0] for z in re.findall("((\d)+|([A-Z][a-z]*\d*)|\)(\d)+|\()", chemicalformula)]
+    
+    cur = 0
+    st = [] # stack to emulate recursion (need back referencing)
+    t = 1
+    if (y[0].isnumeric()):
+        t = int(y[cur])
+        cur = 1
+    st.append(compound(t, []))
+    
+    while (cur < len(y)):
+        token = y[cur]
+        if (token == "("):
+            c = compound(1, [])
+            st[-1].addelem(c)
+            st.append(c)
+        elif (token[0] == ")"):
+            if (len(token) > 1):
+                st[-1].mult = int(token[1:])
+            st.pop()
+        else:
             elem = ""
             mult = ""
-
-        if (formula[pos].isalpha()):
-            elem = elem + formula[pos]
-        if (formula[pos].isdigit()):
-            mult = mult + formula[pos]
-        pos += 1
-    return compound(m, cur)
+            if (len(token) >= 2 and token[:2].isalpha()):
+                elem = token[:2]
+                mult = token[2:]
+            else:
+                elem = token[:1]
+                mult = token[1:]
+            
+            st[-1].addelem(element(elem, int(mult) if len(mult) > 0 else 1))
+        cur+=1
+    return st[-1]
 
 class element:
     mult = 0
@@ -38,6 +55,11 @@ class element:
     
     def compstr(self):
         return self.elem + ("" if (self.mult == 1) else str(self.mult))
+
+    def getelem(self):
+        ret = np.zeros((NUM_ELEMS, 1))
+        ret[ASYMTONUM[self.elem]-1] += self.mult
+        return ret
 
     def __str__(self):
         ret = self.compstr()
@@ -59,9 +81,12 @@ class compound(element):
         return ret
     
     def tomass(self):
-        ret = 0
+        return float(ANUMTOMASS@(self.getelem())[0]) # lol
+    
+    def getelem(self):
+        ret = np.zeros((NUM_ELEMS, 1))
         for x in self.comp:
-            ret += x.tomass()
+            ret += x.getelem()
         return ret * self.mult
 
     def __str__(self):

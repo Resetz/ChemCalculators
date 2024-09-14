@@ -1,56 +1,65 @@
 import re
-from chemformula import compound,element
+import numpy as np
+from scipy.linalg import null_space
+from chemformula import parsemolformula
+
 #from molarmass import parsemolformula
 s = input("Enter a chemical equation -> ").strip()
 
-def parsemolformula(chemicalformula):
-    y = [z[0] for z in re.findall("((\d)+|([A-Z][a-z]*\d*)|\)(\d)+|\()", chemicalformula)]
-    
-    
-    cur = 0
-    st = [] # stack to emulate recursion (need back referencing)
-    t = 1
-    if (y[0].isnumeric()):
-        t = int(y[cur])
-        cur = 1
-    st.append(compound(t, []))
-    
-    while (cur < len(y)):
-        token = y[cur]
-        if (token == "("):
-            c = compound(1, [])
-            st[-1].addelem(c)
-            st.append(c)
-        elif (token[0] == ")"):
-            if (len(token) > 1):
-                st[-1].mult = int(token[1:])
-            st.pop()
-        else:
-            elem = ""
-            mult = ""
-            if (len(token) >= 2 and token[:2].isalpha()):
-                elem = token[:2]
-                mult = token[2:]
-            else:
-                elem = token[:1]
-                mult = token[1:]
-            
-            st[-1].addelem(element(elem, int(mult) if len(mult) > 0 else 1))
-        cur+=1
-    return st[-1]
+A = None
 
+left = []
+right = []
 
+foundarrow = False
 
 for x in re.findall("((\d)*([a-zA-Z0-9\(\)])+|->|\+)", s):
-    chemicalformula = x[0]
-    print("found", chemicalformula)
-
+    token = x[0]
     #regex again yayy
-    res = parsemolformula(chemicalformula)
-    print(res)
-    print("Molar mass is:", res.tomass())
+    if (token == "->"):
+        foundarrow = True
+    elif (token == "+"):
+        continue
+    else:
+        comp = parsemolformula(token)
+        compcol = comp.getelem() * (-1 if foundarrow else 1)
+
+        if (len(left) == 0):
+            A = compcol
+        else:
+            A = np.concat((A, compcol), axis = 1)
+
+        if (foundarrow):
+            right.append(comp)
+        else:
+            left.append(comp)
     #y = re.findall("((\d)+|([A-Z][a-z]*\d*)|\)(\d)+|\()", chemicalformula)
     #for z in y:
     #    print("token (element/coefficient): ", z[0])
-        
 
+sol = np.absolute(null_space(A))
+sol = sol / sol.min()
+
+while True:
+    print("Current solution = ")
+    print(sol)
+    n = float(input("Scale elements by constant? (-1 to exit) -> "))
+    if (n == -1):
+        break
+
+    sol = sol * n
+
+print("Solution")
+print()
+for x in range(len(left)):
+    comp = left[x]
+    comp.mult = int(float(sol[x][0])+0.5)
+    print(str(comp) + (" + " if x != len(left)-1 else " "), end = "")
+
+print("-> ", end = "")
+for x in range(len(right)):
+    comp = right[x]
+    comp.mult = int(float(sol[x+len(left)][0])+0.5)
+    print(str(comp) + (" + " if x != len(right)-1 else "\n"), end = "")
+
+print()
