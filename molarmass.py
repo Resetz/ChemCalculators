@@ -20,7 +20,7 @@ def comptomass(comp):
 
 if __name__ == "__main__":
     formula = input("Enter molecular formulas (seperated by space) -> ")
-    formula = formula.split()
+    formula = formula.split(" ")
     for x in formula:
         comp = parsemolformula(x)
         print(f"{str(comp)} has molar mass of {comp.tomass()} g/mol")

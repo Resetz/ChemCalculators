@@ -1,15 +1,15 @@
-from importptable import ptable_asymtomass, ptable_asymtoanum, NUM_ELEMS
+from importptable import ptable_asymtomass, ptable_asymtoanum, ptable_anumtomass, NUM_ELEMS
 import re
 import numpy as np
 mass = ptable_asymtomass()
-ANUMTOMASS = np.array(mass)
+ANUMTOMASS = np.array(ptable_anumtomass())
 ASYMTONUM = ptable_asymtoanum()
 
 def toelem(elem, mult):
     return (elem, int(mult) if len(mult) > 0 else 1)
 
 def parsemolformula(chemicalformula):
-    y = [z[0] for z in re.findall("((\d)+|([A-Z][a-z]*\d*)|\)(\d)+|\()", chemicalformula)]
+    y = [z[0] for z in re.findall("((\d)+|([A-Z][a-z]*\d*)|\)(\d)*|\()", chemicalformula)]
     
     cur = 0
     st = [] # stack to emulate recursion (need back referencing)
@@ -81,7 +81,7 @@ class compound(element):
         return ret
     
     def tomass(self):
-        return float(ANUMTOMASS@(self.getelem())[0]) # lol
+        return float(ANUMTOMASS@(self.getelem())) # lol
     
     def getelem(self):
         ret = np.zeros((NUM_ELEMS, 1))

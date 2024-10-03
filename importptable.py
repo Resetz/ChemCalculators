@@ -19,7 +19,7 @@ def ptable_asymtoanum(): # Atomic symbol to atomic number
         ret[line[0]] = x
     return ret
 
-def ptable_asymtomass():
+def ptable_asymtomass(): # Atomic symbol to atomic masss
     f.seek(0)
     ret = {}
     for _ in range(1,NUM_ELEMS+1):
